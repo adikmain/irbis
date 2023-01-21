@@ -1,0 +1,11 @@
+client-api-token: encrypted-data
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:Adiqq228}
+  flyway:
+    schemas: ${DB_SCHEMA:irbis}
+  jpa:
+    show-sql: true

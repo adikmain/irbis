@@ -46,31 +46,27 @@ public class NewsRunnerImpl implements NewsRunner {
                 (sourceName, stats) -> executorService.submit(
                         () -> {
                             File file = new File(directoryName + "/" + sourceName + ".csv");
-                            if (file.getParentFile().mkdirs()) {
+                            file.getParentFile().mkdirs();
 
-                                try (CSVPrinter printer = new CSVPrinter(
-                                        new FileWriter(file),
-                                        CSVFormat.DEFAULT)
-                                ) {
-                                    stats.forEach(
-                                            stat -> {
-                                                try {
-                                                    printer.printRecord(stat.getSource(), stat.getTopic(), stat.getCount());
-                                                } catch (IOException e) {
-                                                    throw new RuntimeException(e);
-                                                }
+                            try (CSVPrinter printer = new CSVPrinter(
+                                    new FileWriter(file),
+                                    CSVFormat.DEFAULT)
+                            ) {
+                                stats.forEach(
+                                        stat -> {
+                                            try {
+                                                printer.printRecord(stat.getSource(), stat.getTopic(), stat.getCount());
+                                            } catch (IOException e) {
+                                                throw new RuntimeException(e);
                                             }
-                                    );
+                                        }
+                                );
 
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
                             }
                         }
                 )
         );
-
-
-        System.out.println("Scheduled works!");
     }
 }

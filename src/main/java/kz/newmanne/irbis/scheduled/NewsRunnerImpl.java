@@ -7,9 +7,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,6 +30,9 @@ public class NewsRunnerImpl implements NewsRunner {
 
     private final NewsRepository newsRepository;
 
+    @Value("${directory-name}")
+    private String directoryName;
+
     @Override
     @Scheduled(fixedDelay = 10_000)
     public void loadCsv() {
@@ -40,20 +45,26 @@ public class NewsRunnerImpl implements NewsRunner {
         sourceAgainstStats.forEach(
                 (sourceName, stats) -> executorService.submit(
                         () -> {
-                            try (CSVPrinter printer = new CSVPrinter(new FileWriter(sourceName + ".csv"), CSVFormat.DEFAULT)) {
-                                stats.forEach(
-                                        stat -> {
-                                            try {
-                                                printer.printRecord(stat.getSource(), stat.getTopic(), stat.getCount());
-                                            } catch (IOException e) {
-                                                throw new RuntimeException(e);
+                            File file = new File(directoryName + "/" + sourceName + ".csv");
+                            if (file.getParentFile().mkdirs()) {
+
+                                try (CSVPrinter printer = new CSVPrinter(
+                                        new FileWriter(file),
+                                        CSVFormat.DEFAULT)
+                                ) {
+                                    stats.forEach(
+                                            stat -> {
+                                                try {
+                                                    printer.printRecord(stat.getSource(), stat.getTopic(), stat.getCount());
+                                                } catch (IOException e) {
+                                                    throw new RuntimeException(e);
+                                                }
                                             }
+                                    );
 
-                                        }
-                                );
-
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
                             }
                         }
                 )

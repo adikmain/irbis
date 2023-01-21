@@ -1,4 +1,5 @@
 client-api-token: encrypted-data
+directory-name: data
 
 spring:
   datasource:

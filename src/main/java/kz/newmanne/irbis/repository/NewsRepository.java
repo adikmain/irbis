@@ -13,7 +13,6 @@ public interface NewsRepository extends JpaRepository<NewsEntity, String> {
 
     List<NewsEntity> findBySource(String source, Pageable pageRequest);
 
-
     @Query(
             "select e.source as source, " +
                     "e.topic as topic, " +
@@ -22,5 +21,4 @@ public interface NewsRepository extends JpaRepository<NewsEntity, String> {
                     "e group by e.source, e.topic"
     )
     List<NewsEntityInfo> getStatistics();
-
 }

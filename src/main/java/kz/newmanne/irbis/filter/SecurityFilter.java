@@ -19,16 +19,16 @@ public class SecurityFilter implements Filter {
                          ServletResponse servletResponse,
                          FilterChain filterChain) throws ServletException, IOException {
 
-        var request = (HttpServletRequest) servletRequest;
-        var response = (HttpServletResponse) servletResponse;
-        var token = request.getHeader(X_CLIENT_API_TOKEN);
+        var httpRequest = (HttpServletRequest) servletRequest;
+        var httpResponse = (HttpServletResponse) servletResponse;
+        var token = httpRequest.getHeader(X_CLIENT_API_TOKEN);
 
-        if (clientApiToken.equals(token))
-            filterChain.doFilter(request, response);
-        else {
-            response.setContentType("text/plain");
-            response.setStatus(401);
-            response.getOutputStream().println("Unauthorized! Specify token in header: " + X_CLIENT_API_TOKEN);
+        if (clientApiToken.equals(token)) {
+            filterChain.doFilter(httpRequest, httpResponse);
+        } else {
+            httpResponse.setContentType("text/plain");
+            httpResponse.setStatus(401);
+            httpResponse.getOutputStream().println("Unauthorized! Please specify token in header: " + X_CLIENT_API_TOKEN);
         }
     }
 }

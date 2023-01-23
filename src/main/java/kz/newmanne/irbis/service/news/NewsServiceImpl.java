@@ -1,9 +1,9 @@
 package kz.newmanne.irbis.service.news;
 
+import kz.newmanne.irbis.dto.NewsDTO;
 import kz.newmanne.irbis.entity.NewsEntity;
 import kz.newmanne.irbis.mapper.NewsMapper;
 import kz.newmanne.irbis.repository.NewsRepository;
-import kz.newmanne.irbis.web.dto.NewsDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;

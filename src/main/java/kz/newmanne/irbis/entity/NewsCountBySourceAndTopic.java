@@ -1,9 +1,9 @@
 package kz.newmanne.irbis.entity;
 
-public interface NewsEntityInfo {
+public interface NewsCountBySourceAndTopic {
     String getSource();
 
     String getTopic();
 
-    Long getCount();
+    Long getNewsCount();
 }

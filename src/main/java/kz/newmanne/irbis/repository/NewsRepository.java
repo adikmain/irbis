@@ -2,6 +2,7 @@ package kz.newmanne.irbis.repository;
 
 import kz.newmanne.irbis.entity.NewsCountBySourceAndTopic;
 import kz.newmanne.irbis.entity.NewsEntity;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,5 +21,5 @@ public interface NewsRepository extends JpaRepository<NewsEntity, String> {
                     "from NewsEntity " +
                     "e group by e.source, e.topic"
     )
-    List<NewsCountBySourceAndTopic> getNewsCountBySourceAndTopic();
+    Page<NewsCountBySourceAndTopic> getNewsCountBySourceAndTopic(Pageable pageable);
 }

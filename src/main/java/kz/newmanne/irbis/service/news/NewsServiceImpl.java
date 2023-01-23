@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ public class NewsServiceImpl implements NewsService {
     private final NewsRepository newsRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<NewsDTO> getNews(Integer page, Integer pageSize, String source, String topic) {
         if (pageSize == null || pageSize < 1)
             pageSize = 10;

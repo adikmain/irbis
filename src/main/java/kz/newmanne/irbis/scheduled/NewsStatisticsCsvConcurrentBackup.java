@@ -17,17 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class NewsStatisticsCsvConcurrentBackup implements NewsStatistics {
-
-    private final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private final NewsRepository newsRepository;
     @Value("${statistics-folder:stats}")
     private String statisticsFolder;
@@ -37,40 +35,26 @@ public class NewsStatisticsCsvConcurrentBackup implements NewsStatistics {
     public void backup() {
         createStatisticsFolder();
 
-        Page<NewsCountBySourceAndTopic> pageJustForCount =
+        Page<NewsCountBySourceAndTopic> pageToGetCount =
                 newsRepository.getNewsCountBySourceAndTopic(PageRequest.of(0, 2));
 
-        for (int i = 0; i < pageJustForCount.getTotalPages(); i++) {
+        List<CompletableFuture<List<NewsCountBySourceAndTopic>>> asyncTasks = new ArrayList<>();
+
+        for (int i = 0; i < pageToGetCount.getTotalPages(); i++) {
             int currentPage = i;
-            executorService.submit(
-                    () -> convertStatisticsToCsv(
-                            newsRepository
-                                    .getNewsCountBySourceAndTopic(
-                                            PageRequest.of(currentPage, 2)
-                                    )
-                                    .getContent()
-                    )
+            asyncTasks.add(
+                    CompletableFuture
+                            .supplyAsync(
+                                    () -> newsRepository
+                                            .getNewsCountBySourceAndTopic(
+                                                    PageRequest.of(currentPage, 2)
+                                            )
+                                            .getContent()
+                            )
             );
         }
-    }
 
-    private void convertStatisticsToCsv(List<NewsCountBySourceAndTopic> newsStatistics) {
-        newsStatistics
-                .stream()
-                .collect(Collectors.groupingBy(NewsCountBySourceAndTopic::getSource))
-                .forEach((source, topicAndNewsCountListBySource) -> executorService.submit(
-                        () -> {
-                            File csvFile = new File(statisticsFolder + "/" + source + ".csv");
-
-                            for (var topicWithNewsCount : topicAndNewsCountListBySource) {
-                                try (CSVPrinter csvWriter = new CSVPrinter(new FileWriter(csvFile, true), CSVFormat.DEFAULT)) {
-                                    csvWriter.printRecord(topicWithNewsCount.getTopic(), topicWithNewsCount.getNewsCount());
-                                } catch (IOException e) {
-                                    log.info("unable to write statistics", e);
-                                }
-                            }
-                        })
-                );
+        asyncTasks.forEach(task -> task.thenAccept(this::convertStatisticsToCsv));
     }
 
     private void createStatisticsFolder() {
@@ -78,9 +62,29 @@ public class NewsStatisticsCsvConcurrentBackup implements NewsStatistics {
         boolean isDirectoryCreated = directoryPath.mkdirs();
 
         if (!isDirectoryCreated) {
-            if (!directoryPath.isDirectory() || !directoryPath.exists()) {
-                throw new RuntimeException("Folder for statistics can't be created!");
+            if (directoryPath.isDirectory() && directoryPath.exists()) {
+                log.info("Directory is already created!");
             }
         }
+    }
+
+    private void convertStatisticsToCsv(List<NewsCountBySourceAndTopic> newsStatistics) {
+        newsStatistics
+                .stream()
+                .collect(Collectors.groupingBy(NewsCountBySourceAndTopic::getSource))
+                .forEach((source, topicAndNewsCountListBySource) -> CompletableFuture.runAsync(
+                                () -> {
+                                    File csvFile = new File(statisticsFolder + "/" + source + ".csv");
+
+                                    for (var topicWithNewsCount : topicAndNewsCountListBySource) {
+                                        try (CSVPrinter csvWriter = new CSVPrinter(new FileWriter(csvFile, true), CSVFormat.DEFAULT)) {
+                                            csvWriter.printRecord(topicWithNewsCount.getTopic(), topicWithNewsCount.getNewsCount());
+                                        } catch (IOException e) {
+                                            log.info("unable to write statistics", e);
+                                        }
+                                    }
+                                }
+                        )
+                );
     }
 }
